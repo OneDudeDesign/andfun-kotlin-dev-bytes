@@ -18,16 +18,25 @@
 package com.example.android.devbyteviewer
 
 import android.app.Application
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.android.devbyteviewer.work.RefreshDataWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 /**
  * Override application to setup background work via WorkManager
  */
 class DevByteApplication : Application() {
 
-    // TODO (01) Create CoroutineScope variable applicationScope, using Dispatchers.Default.
+    // done (01) Create CoroutineScope variable applicationScope, using Dispatchers.Default.
+    val applicationScope = CoroutineScope(Dispatchers.Default)
 
-    // TODO (02) Create a delayedInit() function that calls setupRecurringWork() in
+    // done (02) Create a delayedInit() function that calls setupRecurringWork() in
     // the coroutine you defined above.
 
     // TODO (04) Create a setupRecurringWork() function and use a Builder to define a
@@ -52,4 +61,21 @@ class DevByteApplication : Application() {
         Timber.plant(Timber.DebugTree())
         // TODO (03) Call delayedInit().
     }
+
+
+    private fun delayedInit() = applicationScope.launch {
+        setupRecurringWork()
+    }
+
+    private fun setupRecurringWork() {
+        val repeatingRequest = PeriodicWorkRequestBuilder<RefreshDataWorker>(
+                1, TimeUnit.DAYS)
+                .build()
+
+        WorkManager.getInstance().enqueueUniquePeriodicWork(
+                RefreshDataWorker.WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                repeatingRequest)
+    }
+
 }
